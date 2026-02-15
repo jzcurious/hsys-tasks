@@ -1,0 +1,94 @@
+\listfiles
+\documentclass[12pt]{article}
+
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{indentfirst}
+
+\usepackage[english, russian]{babel}
+\usepackage[a4paper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+\usepackage[style=russian]{csquotes}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{graphicx}
+
+\emergencystretch=2em
+
+\title{Курс <<Гибридные вычислительные системы>>}
+\author{ст. преп. каф. ВпВ ИКИТ СФУ Тарасов С. А.}
+\date{}
+
+\begin{document}
+\maketitle
+
+\abstract{}
+Курс <<Гибридные вычислительные системы>> посвящен гетерогенным вычислениям (Heterogeneous Computing): рассматриваются общие аспекты гетерогенных вычислений; особое внимание уделяется технологии CUDA (GPGPU).
+Продолжительность --- 2 семестра; формы оценивания: зачет, экзамен.
+
+\section*{Гетерогенные вычисления}
+
+Гетерогенные вычисления — это парадигма вычислений, в рамках которой для решения задач используются процессоры разных архитектур, каждый из которых оптимизирован для определённых типов операций. В отличие от гомогенных систем (например, только CPU), гетерогенные системы комбинируют разнородные вычислительные устройства в рамках одной платформы. Классическим примером HC-системы является связка CPU + GPU.
+
+\section*{Содержание курса}
+\begin{itemize}
+\item Гетерогенные вычисления (обзор)
+\item Обзор архитектуры NVIDIA Tesla GPU
+\item Модель программирования CUDA
+\item CUDA Toolchain: компиляция, линковка и дистрибуция
+\item Тестирование
+\item Точность вычислений и вычисления низкой точности
+\item Проектирование гетерогенных вычислений/паттерны проектирования
+\item Оценка производительности и оптимизация CUDA kernels
+\item Математика глубокого обучения: автоматическое дифференцирование и обратное распространение ошибки
+\item Реализация моделей глубокого обучения на базе CUDA
+\end{itemize}
+
+\section*{Практика}
+
+Практическая часть курса состоит из 10 работ, которые охватывают основные составляющие разработки на CUDA; вот некоторые из них:
+
+\begin{itemize}
+\item написание и интеграция GPU-кода (kernels)
+\item параллельное программирование и конфигурация сетки нитей
+\item использование различных типов памяти (shared, global, texture и др.)
+\item программирование тензорных ядер
+\item внутриварповый обмен
+\item работа с CUDA Streams \& Graphs
+\item оптимизация kernels (register pressure, warp divergence, occupancy и др.)
+\end{itemize}
+
+Каждая работа имеет базовую структуру:
+
+\begin{itemize}
+\item разработка классов и kernels
+\item интеграция kernels в C++-код
+\item написание тестов и тестирование
+\item написание бенчмарков и оценка производительности
+\item анализ полученных оценок производительности
+\end{itemize}
+
+Все работы объединены тематикой глубокого обучения.
+В результате успешного прохождения практической части курса студент получит навык реализации моделей глубокого обучения в фреймворке CUDA + PyTorch.
+
+Задание каждой работы составлено таким образом, чтобы в результате ее выполнения студент получил программную библиотеку, которая будет использоваться в следующих работах.
+
+К каждой работе прилагаются критерии ее оценивания.
+
+Ознакомиться с заданиями можно по ссылке: https.
+
+\section*{Технологический стек}
+\begin{itemize}
+\item Аппаратное обеспечение: NVIDIA Tesla GPU (Tesla T4)
+\item CUDA Toolkit: NVCC, Nsight Compute, cuda-gdb, cuobjdump, Compute Sanitizer
+\item Языки программирования: CUDA C++, C++ (std=C++20), NVIDIA PTX, Python
+\item Библиотеки: CUDA Runtime API, CUDNN, Google Benchmark, Google Test, unittest/PyTest, Eigen, LibTorch, PyTorch, PyBind11
+\item Сборка: CMake + Ninja
+\item Компиляторы: NVCC, Clang++/G++
+\item Git/GitHub
+\item Google Colab
+\item IDE: clangd, clang-tidy, clang-format
+\item Паттерны проектирования: RAII, Data + View, Policy/Strategy, Expression Templates, CRTP и др.
+\end{itemize}
+
+\end{document}

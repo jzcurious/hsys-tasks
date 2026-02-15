@@ -1,0 +1,186 @@
+\documentclass[12pt]{article}
+
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english, russian]{babel}
+\usepackage[a4paper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+\usepackage{dirtree}
+\usepackage{microtype}
+\usepackage{pgf-umlcd}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{graphicx}
+\usepackage{float}
+
+\emergencystretch=2em
+
+\title{Практическая работа №1}
+\author{ст. преп. каф. ВпВ ИКИТ СФУ Тарасов С. А.}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Цель}
+Освоить базовые навыки программирования CUDA: работу с одномерными сетками нитей и динамической памятью устройства. Изучить паттерн проектирования \texttt{data + view}.
+
+\section*{Задание}
+\begin{enumerate}
+    \item Разработать класс \texttt{Data}, который реализует идиому RAII и предоставляет интерфейс для работы с данными на устройстве: динамическое выделение и освобождение массива глобальной памяти, копирование и перемещение данных.
+    \item Разработать класс \texttt{VectorView}, который предоставляет интерфейс для обращения к данным на устройстве: доступ к элементам данных для чтения и записи. Класс должен быть тривиально-копируемым.
+    \item Разработать класс \texttt{Vector} (см. рис.~\ref{fig:class_diagram}), который представляет собой \texttt{фасад}, объединяющий:
+    \begin{itemize}
+        \item агрегацию с классом \texttt{Data} через \texttt{std::shared\_ptr} (для разделения данных между векторами);
+        \item композицию с классом \texttt{VectorView} (каждый экземпляр \texttt{Vector} имеет собственное представление);
+        \item единый упрощённый интерфейс для работы с векторами.
+    \end{itemize}
+    \item Разработать кёрнел \texttt{kernel\_vecadd}, который в качестве аргументов принимает по значению объекты класса \texttt{VectorView} и вычисляет сумму векторов.
+    \item Перегрузить оператор \texttt{operator+} для класса \texttt{Vector}, используя указанный кёрнел.
+    \item Используя фреймворк \texttt{Google Test}, разработать модульные тесты для \texttt{operator+} с размерами векторов $n \in \{1, 2, 3, 127, 128, 129, 512, 1024, 1029\}$. В качестве эталона для сравнения использовать результат аналогичной операции для \texttt{Eigen::VectorXf}; для верификации результатов применять метод \texttt{Eigen::VectorXf::isApprox} с абсолютной точностью $10^{-6}$.
+    \item Используя фреймворк \texttt{Google Benchmark}, разработать бенчмарки для \texttt{operator+} с размерами векторов $n \in \{8, 8^2, 8^3, 8^4, 8^5, 8^6, 8^7, 8^8\}$. Бенчмарки должны игнорировать время, затраченное на выделение, копирование и освобождение памяти. Для корректного измерения времени выполнения CUDA-кода необходимо использовать \texttt{CUDA Events API}.
+
+    \item Построить график реальной вычислительной сложности (\texttt{real complexity}, пример на рис.~\ref{fig:complexity}) \texttt{operator+} для сложения векторов типа \texttt{Vector} и аналогичный график для сложения векторов типа \texttt{Eigen::VectorXf}.
+
+    \item Построить график ускорения (\texttt{speedup}, пример на рис.~\ref{fig:speedup}) \texttt{operator+} для сложения векторов типа \texttt{Vector} относительно \texttt{operator+} для \texttt{Eigen::VectorXf}.
+
+    \item Сравнить результаты измерений с теоретическими оценками.
+    \item Подготовить отчёт о проделанной работе, который содержит:
+    \begin{itemize}
+        \item фрагменты исходного кода (\texttt{Data}, \texttt{VectorView}, \texttt{Vector}, \texttt{kernel\_vecadd});
+        \item ссылку на репозиторий с полным кодом;
+        \item результаты измерений в виде графиков;
+        \item интерпретацию результатов измерений.
+    \end{itemize}
+\end{enumerate}
+
+\section*{Критерии оценки}
+\begin{itemize}
+    \item \textbf{Корректность реализации и тестирование (50\%):}
+    \begin{itemize}
+        \item отсутствие утечек памяти, корректная работа с \texttt{CUDA API};
+        \item правильность результатов сложения векторов различных размеров;
+        \item полнота тестового покрытия, включая граничные случаи;
+        \item соответствие результатов эталонной реализации.
+    \end{itemize}
+
+    \item \textbf{Качество кода и архитектура (25\%):}
+    \begin{itemize}
+        \item корректная реализация паттерна \texttt{data + view};
+        \item чистота архитектуры, разделение ответственности между классами;
+        \item соблюдение идиомы \texttt{RAII}, корректное использование умных указателей;
+        \item единообразие стиля, качество форматирования и читаемость кода.
+    \end{itemize}
+
+    \item \textbf{Качество вычислительного эксперимента (15\%):}
+    \begin{itemize}
+        \item корректность методики измерений производительности;
+        \item глубина анализа результатов, сравнение с теоретическими оценками.
+    \end{itemize}
+
+    \item \textbf{Документация и оформление (10\%):}
+    \begin{itemize}
+        \item полнота и структурированность отчёта;
+        \item ясность изложения;
+        \item оформление репозитория;
+        \item оформление отчёта (\href{https://sfu.ru/sapi/file-upload/325396c75b669b84763c10b7b5c73ec1.pdf}{СТУ 7.5–07–2021}).
+    \end{itemize}
+\end{itemize}
+
+\section*{Рекомендации к выполнению работы}
+\begin{itemize}
+    \item Сделайте классы \texttt{Data}, \texttt{VectorView} и \texttt{Vector} шаблонами, зависящими от числовых типов.
+    \item Основной код оформите в виде библиотеки.
+    \item Для сборки проекта используйте \texttt{CMake + Ninja}.
+    \item Используйте \texttt{C++20}. Более новые стандарты не поддерживаются \texttt{NVCC}.
+    \item Вы можете использовать \texttt{NVIDIA Nsight Visual Studio Code} в качестве IDE.
+    \item Вы можете использовать \texttt{Zed Editor + clangd + clang-format + clang-tidy} в качестве IDE.
+    \item Для построения графиков используйте \texttt{Python} и пакет \texttt{plotly}.
+    \item Вы можете использовать \texttt{LaTeX} для создания отчёта.
+    \item Ознакомьтесь с \href{https://docs.nvidia.com/cuda/cuda-c-programming-guide/#programming-model}{официальным руководством CUDA}.
+    \item Пример структуры проекта:
+    \dirtree{%
+    .1 hsys/.
+    .2 work1/.
+    .3 core/.
+    .4 include/.
+    .4 src/.
+    .4 CMakeLists.txt.
+    .3 tests/.
+    .4 include/.
+    .4 src/.
+    .4 CMakeLists.txt.
+    .3 benchmarks/.
+    .4 include/.
+    .4 src/.
+    .4 CMakeLists.txt.
+    .3 CMakeLists.txt.
+    .2 CMakeLists.txt.
+    .2 build/.
+    }
+\end{itemize}
+
+\begin{figure}[t!]
+\begin{center}
+\begin{tikzpicture}
+    % Data
+    \begin{class}[fill=white,text width=13cm, draw=black]{Data<AtomT>}{0,0}
+    \attribute{- size\_ : std::size\_t}
+    \attribute{- data\_ : AtomT*}
+    \operation{+ Data(size : std::size\_t)}
+    \operation{+ Data(const Data\& other)}
+    \operation{+ Data(Data\&\& other) noexcept}
+    \operation{+ operator=(const Data\& other) : Data\&}
+    \operation{+ operator=(Data\&\& other) noexcept : Data\&}
+    \operation{+ data() : AtomT*}
+    \operation{+ data() const : const AtomT*}
+    \operation{+ size() const : std::size\_t}
+    \operation{+ copy\_to\_host(host\_ptr : AtomT*) const : void}
+    \operation{+ copy\_from\_host(host\_ptr : const AtomT*) : void}
+    \operation{+ $\sim$Data()}
+    \end{class}
+
+    % Vector
+    \begin{class}[fill=white,text width=13cm, draw=black]{Vector<AtomT>}{0,-9.5}
+        \attribute{- data\_ : std::shared\_ptr<Data<AtomT> >}
+        \attribute{- view\_ : VectorView<AtomT>}
+        \operation{+ Vector(size : std::size\_t)}
+        \operation{+ size() const : std::size\_t}
+        \operation{+ data() : Data<AtomT>\&}
+        \operation{+ data() const : const Data<AtomT>\&}
+        \operation{+ view() : VectorView<AtomT>\&}
+        \operation{+ view() const : const VectorView<AtomT>\&}
+    \end{class}
+
+    % View
+    \begin{class}[fill=white,text width=13cm, draw=black]{VectorView<AtomT>}{0,-17.5}
+        \attribute{- data\_ : AtomT*}
+        \attribute{- size\_ : std::size\_t}
+        \operation{+ VectorView(data : AtomT*, size : std::size\_t)}
+        \operation{+ size() const : std::size\_t}
+        \operation{+ operator[](n : std::size\_t) : AtomT\&}
+        \operation{+ operator[](n : std::size\_t) const : const AtomT\&}
+        \operation{+ operator()(i : std::size\_t) : AtomT\&}
+        \operation{+ operator()(i : std::size\_t) const : const AtomT\&}
+    \end{class}
+
+    \aggregation[style={thick, >=stealth, draw=black}]{Vector<AtomT>}{}{}{Data<AtomT>}
+    \composition[style={thick, >=stealth, draw=black}]{Vector<AtomT>}{}{}{VectorView<AtomT>}
+\end{tikzpicture}
+\caption{Диаграмма классов}
+\label{fig:class_diagram}
+\end{center}
+\end{figure}
+
+\begin{figure}[t]
+    \includegraphics[width=1\textwidth]{complexity.png}
+    \caption{Графики реальной вычислительной сложности}
+    \label{fig:complexity}
+\end{figure}
+
+\begin{figure}[t]
+    \includegraphics[width=1\textwidth]{speedup.png}
+    \caption{График ускорения}
+    \label{fig:speedup}
+\end{figure}
+
+\end{document}

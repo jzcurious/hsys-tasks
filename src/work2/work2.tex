@@ -1,0 +1,200 @@
+\documentclass[12pt]{article}
+
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english, russian]{babel}
+\usepackage[a4paper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+\usepackage[style=russian]{csquotes}
+\usepackage{dirtree}
+\usepackage{microtype}
+\usepackage{pgf-umlcd}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{graphicx}
+
+\emergencystretch=2em
+
+\title{Практическая работа №2}
+\author{ст. преп. каф. ВпВ ИКИТ СФУ Тарасов С. А.}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Цель работы}
+Закрепить базовые навыки программирования CUDA. Освоить работу с двумерными сетками нитей.
+
+\section*{Задание}
+\begin{enumerate}
+    \item Разработать класс \texttt{Matrix} (см. рис.~\ref{fig:class_diagram}), который представляет собой \texttt{фасад}, объединяющий:
+    \begin{itemize}
+        \item агрегацию с классом \texttt{Data} через \texttt{std::shared\_ptr} (для разделения данных между матрицами);
+        \item композицию с классом \texttt{MatrixView} (каждый экземпляр \texttt{Matrix} имеет собственное представление);
+        \item единый упрощённый интерфейс для работы с матрицами.
+    \end{itemize}
+
+    \item Разработать класс \texttt{MatrixView}, предоставляющий интерфейс для доступа к элементам матрицы на устройстве (чтение и запись по индексам, row-major). Класс должен быть тривиально-копируемым.
+
+    \item Разработать кёрнел \texttt{kernel\_matmul\_naive}, который принимает объекты \texttt{MatrixView} по значению и вычисляет произведение матриц без использования разделяемой памяти.
+
+    \item Перегрузить оператор \texttt{operator*} для класса \texttt{Matrix}, используя указанный кёрнел.
+
+    \item Используя фреймворк \texttt{Google Test}, разработать модульные тесты для \texttt{operator*} со следующими размерами матриц: $A$ ($m \times k$) и $B$ ($k \times n$), где $m, n, k \in \{1, 2, 3, 127, 128, 129, 512\}$. В качестве эталона для сравнения использовать результат аналогичной операции для \texttt{Eigen::MatrixXf}; для верификации результатов применять метод \texttt{Eigen::MatrixXf::isApprox} с абсолютной точностью $10^{-5}$.
+
+    \item Используя фреймворк \texttt{Google Benchmark}, разработать бенчмарки для \texttt{operator*} со следующими размерами матриц: $n \times n$, где $n \in \{16, 32, 64, 128,$ $256, 512, 1024\}$. Бенчмарки должны игнорировать время, затраченное на выделение, копирование и освобождение памяти. Для корректного измерения времени выполнения CUDA-кода необходимо использовать \texttt{CUDA Events API}.
+
+    \item Построить график реальной вычислительной сложности (\texttt{real complexity}, пример на рис.~\ref{fig:complexity}) \texttt{operator*} для умножения матриц типа \texttt{Matrix} и аналогичный график для умножения матриц типа \texttt{Eigen::MatrixXf}.
+
+    \item Построить график ускорения (\texttt{speedup}, пример на рис.~\ref{fig:speedup}) \texttt{operator*} для умножения матриц типа \texttt{Matrix} относительно \texttt{operator*} для \texttt{Eigen::MatrixXf}.
+
+    \item Сравнить экспериментальные результаты с теоретическими оценками вычислительной сложности.
+
+    \item Подготовить отчёт, содержащий:
+    \begin{itemize}
+        \item ключевые фрагменты кода;
+        \item ссылку на репозиторий с полной реализацией;
+        \item графики результатов измерений;
+        \item анализ и интерпретацию полученных результатов.
+    \end{itemize}
+\end{enumerate}
+
+\section*{Критерии оценки}
+\begin{itemize}
+    \item \textbf{Корректность реализации и тестирование (50\%):}
+    \begin{itemize}
+        \item отсутствие утечек памяти, корректная работа с \texttt{CUDA API};
+        \item правильность результатов умножения матриц различных размеров;
+        \item полнота тестового покрытия, включая граничные случаи;
+        \item соответствие результатов эталонной реализации.
+    \end{itemize}
+
+    \item \textbf{Качество кода и архитектура (25\%):}
+    \begin{itemize}
+        \item корректная реализация паттерна \texttt{data + view};
+        \item чистота архитектуры, разделение ответственности между классами;
+        \item соблюдение идиомы \texttt{RAII}, корректное использование умных указателей;
+        \item единообразие стиля, качество форматирования и читаемость кода.
+    \end{itemize}
+
+    \item \textbf{Качество вычислительного эксперимента (15\%):}
+    \begin{itemize}
+        \item корректность методики измерений производительности;
+        \item глубина анализа результатов, сравнение с теоретическими оценками.
+    \end{itemize}
+
+    \item \textbf{Документация и оформление (10\%):}
+    \begin{itemize}
+        \item полнота и структурированность отчёта;
+        \item ясность изложения;
+        \item оформление репозитория;
+        \item оформление отчёта (\href{https://sfu.ru/sapi/file-upload/325396c75b669b84763c10b7b5c73ec1.pdf}{СТУ 7.5–07–2021}).
+    \end{itemize}
+\end{itemize}
+
+\section*{Рекомендации по выполнению}
+\begin{itemize}
+    \item Реализуйте классы \texttt{MatrixView} и \texttt{Matrix} как шаблоны, параметризованные числовыми типами.
+    \item Используйте линейную организацию памяти для матриц (row-major или column-major).
+    \item Для сборки проекта применяйте \texttt{CMake + Ninja}.
+    \item Используйте стандарт \texttt{C++20} (более новые стандарты могут не поддерживаться \texttt{NVCC}).
+    \item Для параметризованного тестирования используйте \texttt{Combine (Google Test)}.
+    \item Для построения графиков применяйте \texttt{Python} с пакетом \texttt{plotly}.
+    \item Учтите, что Eigen по умолчанию использует column-major размещение элементов.
+    \item Ознакомьтесь с \href{https://docs.nvidia.com/cuda/cuda-c-programming-guide/#programming-model}{официальным руководством CUDA}.
+
+    \item Структура проекта:
+    \dirtree{%
+    .1 hsys/.
+    .2 work1/.
+    .2 work2/.
+    .3 core/.
+    .4 include/.
+    .4 src/.
+    .4 CMakeLists.txt.
+    .3 tests/.
+    .4 include/.
+    .4 src/.
+    .4 CMakeLists.txt.
+    .3 benchmarks/.
+    .4 include/.
+    .4 src/.
+    .4 CMakeLists.txt.
+    .3 CMakeLists.txt.
+    .2 CMakeLists.txt.
+    .2 build/.
+    }
+\end{itemize}
+
+\section*{Теоретическая справка}
+Умножение матриц $C = AB$, где $A$ имеет размер $m \times k$, а $B$ — $k \times n$, имеет вычислительную сложность $O(m \cdot n \cdot k)$.
+
+\begin{figure}[t!]
+\begin{center}
+\begin{tikzpicture}
+    % Data
+    \begin{class}[fill=white,text width=13cm, draw=black]{Data<AtomT>}{0,0}
+    \attribute{- size\_ : std::size\_t}
+    \attribute{- data\_ : AtomT*}
+    \operation{+ Data(size : std::size\_t)}
+    \operation{+ Data(const Data\& other)}
+    \operation{+ Data(Data\&\& other) noexcept}
+    \operation{+ operator=(const Data\& other) : Data\&}
+    \operation{+ operator=(Data\&\& other) noexcept : Data\&}
+    \operation{+ data() : AtomT*}
+    \operation{+ data() const : const AtomT*}
+    \operation{+ size() const : std::size\_t}
+    \operation{+ copy\_to\_host(host\_ptr : AtomT*) const : void}
+    \operation{+ copy\_from\_host(host\_ptr : const AtomT*) : void}
+    \operation{+ $\sim$Data()}
+    \end{class}
+
+    % Matrix
+    \begin{class}[fill=white,text width=13cm, draw=black]{Matrix<AtomT>}{0,-9.5}
+        \attribute{- data\_ : std::shared\_ptr<Data<AtomT>>}
+        \attribute{- view\_ : MatrixView<AtomT>}
+        \operation{+ Matrix(nrows : std::size\_t, ncols : std::size\_t)}
+        \operation{+ size() const : std::size\_t}
+        \operation{+ nrows() const : std::size\_t}
+        \operation{+ ncols() const : std::size\_t}
+        \operation{+ data() : Data<AtomT>\&}
+        \operation{+ data() const : const Data<AtomT>\&}
+        \operation{+ view() : MatrixView<AtomT>\&}
+        \operation{+ view() const : const MatrixView<AtomT>\&}
+    \end{class}
+
+    % View
+    \begin{class}[fill=white,text width=13cm, draw=black]{MatrixView<AtomT>}{0,-17.5}
+        \attribute{- data\_ : AtomT*}
+        \attribute{- nrows\_ : std::size\_t}
+        \attribute{- ncols\_ : std::size\_t}
+        \operation{+ MatrixView(data : AtomT*, nrows : std::size\_t, ncols : std::size\_t)}
+        \operation{+ size() const : std::size\_t}
+        \operation{+ nrows() const : std::size\_t}
+        \operation{+ ncols() const : std::size\_t}
+        \operation{+ operator[](n : std::size\_t) : AtomT\&}
+        \operation{+ operator[](n : std::size\_t) const : const AtomT\&}
+        \operation{+ operator()(i : std::size\_t, j : std::size\_t) : AtomT\&}
+        \operation{+ operator()(i : std::size\_t, j : std::size\_t) const : const AtomT\&}
+    \end{class}
+
+    \aggregation[style={thick, >=stealth, draw=black}]{Matrix<AtomT>}{}{}{Data<AtomT>}
+    \composition[style={thick, >=stealth, draw=black}]{Matrix<AtomT>}{}{}{MatrixView<AtomT>}
+\end{tikzpicture}
+\caption{Диаграмма классов}
+\label{fig:class_diagram}
+\end{center}
+\end{figure}
+
+\begin{figure}[ht!]
+    \includegraphics[width=1\textwidth]{complexity.png}
+    \caption{Графики реальной вычислительной сложности}
+    \label{fig:complexity}
+\end{figure}
+
+\begin{figure}[ht!]
+    \includegraphics[width=1\textwidth]{speedup.png}
+    \caption{График ускорения}
+    \label{fig:speedup}
+\end{figure}
+
+\end{document}

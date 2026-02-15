@@ -1,0 +1,93 @@
+\documentclass[12pt]{article}
+
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english, russian]{babel}
+\usepackage[a4paper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+\usepackage[style=russian]{csquotes}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{graphicx}
+
+\emergencystretch=2em
+
+\title{Практическая работа №4}
+\author{ст. преп. каф. ВпВ ИКИТ СФУ Тарасов С. А.}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Цель работы}
+Получить навыки программирования тензорных ядер CUDA.
+
+\section*{Задание}
+\begin{enumerate}
+    \item Разработать кёрнел \texttt{kernel\_matmul\_wmma}, который принимает объекты \texttt{MatrixView} по значению и вычисляет произведение матриц, используя \texttt{CUDA WMMA} (см. рис.~\ref{fig:mmblock}).
+
+    \item Перегрузить оператор \texttt{operator*} для класса \texttt{Matrix}, используя указанный кёрнел.
+
+    \item Используя фреймворк \texttt{Google Test}, разработать модульные тесты для \texttt{operator*} со следующими размерами матриц: $A$ ($m \times k$) и $B$ ($k \times n$), где $m, n, k \in \{16, 32, 64, 128, 256, 512\}$. В качестве эталона для сравнения использовать результат аналогичной операции для \texttt{Eigen::Matrix<Eigen::half, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>}; для верификации результатов применять метод \texttt{Eigen::MatrixXf::isApprox} с абсолютной точностью $10^{-2}$.
+
+    \item Используя фреймворк \texttt{Google Benchmark}, разработать бенчмарки для \texttt{operator*} со следующими размерами матриц: $n \times n$, где $n \in \{16, 32, 64, 128,$ $256, 512, 1024\}$. Бенчмарки должны игнорировать время, затраченное на выделение, копирование и освобождение памяти. Для корректного измерения времени выполнения CUDA-кода необходимо использовать \texttt{CUDA Events API}.
+
+    \item Построить график реальной вычислительной сложности умножения матриц типа \texttt{Matrix} с помощью новой реализации \texttt{operator*}, а также аналогичный график для предыдущей версии \texttt{operator*}.
+
+    \item Построить график ускорения (\texttt{speedup}) новой реализации \texttt{operator*} относительно предыдущей версии.
+
+    \item Объяснить экспериментальные результаты.
+
+    \item Подготовить отчёт, содержащий:
+    \begin{itemize}
+        \item ключевые фрагменты кода;
+        \item ссылку на репозиторий с полной реализацией;
+        \item графики результатов измерений;
+        \item анализ и интерпретацию полученных результатов.
+    \end{itemize}
+\end{enumerate}
+
+\section*{Критерии оценки}
+\begin{itemize}
+    \item \textbf{Корректность реализации и тестирование (50\%):}
+    \begin{itemize}
+        \item отсутствие утечек памяти, корректная работа с \texttt{CUDA API};
+        \item правильность результатов умножения матриц различных размеров;
+        \item полнота тестового покрытия, включая граничные случаи;
+        \item соответствие результатов эталонной реализации.
+    \end{itemize}
+
+    \item \textbf{Качество кода и архитектура (25\%):}
+    \begin{itemize}
+        \item чистота архитектуры, разделение ответственности между классами;
+        \item единообразие стиля, качество форматирования и читаемость кода.
+    \end{itemize}
+
+    \item \textbf{Качество вычислительного эксперимента (15\%):}
+    \begin{itemize}
+        \item корректность методики измерений производительности;
+        \item глубина анализа результатов, сравнение с теоретическими оценками.
+    \end{itemize}
+
+    \item \textbf{Документация и оформление (10\%):}
+    \begin{itemize}
+        \item полнота и структурированность отчёта;
+        \item ясность изложения;
+        \item оформление репозитория;
+        \item оформление отчёта (\href{https://sfu.ru/sapi/file-upload/325396c75b669b84763c10b7b5c73ec1.pdf}{СТУ 7.5–07–2021}).
+    \end{itemize}
+\end{itemize}
+
+\section*{Рекомендации по выполнению}
+\begin{itemize}
+    \item Используйте паттерн проектирования \texttt{стратегия} при разработке \texttt{operator*}.
+    \item Ознакомьтесь с \href{https://docs.nvidia.com/cuda/cuda-c-programming-guide/#warp-matrix-functions}{официальным руководством CUDA}.
+\end{itemize}
+
+\begin{figure}[ht!]
+    \includegraphics[width=1\textwidth]{wmma.png}
+    \caption{Схема произведения матриц с помощью WMMA}
+    \label{fig:mmblock}
+\end{figure}
+
+\end{document}
