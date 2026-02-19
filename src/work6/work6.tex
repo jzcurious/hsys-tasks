@@ -1,0 +1,188 @@
+\documentclass[12pt]{article}
+
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english, russian]{babel}
+\usepackage[a4paper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+\usepackage[style=russian]{csquotes}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{graphicx}
+\usepackage{seqsplit}
+% \usepackage{breqn}
+\usepackage{amsmath}
+\usepackage{booktabs}
+
+\usepackage{xcolor}
+\usepackage{listings}
+\lstset{
+    language=C++,                 % язык программирования
+    basicstyle=\ttfamily\small,   % шрифт
+    keywordstyle=\color{blue},    % цвет ключевых слов
+    stringstyle=\color{red},      % цвет строк
+    commentstyle=\color{green},   % цвет комментариев
+    numbers=left,                 % нумерация строк слева
+    numberstyle=\tiny,            % размер цифр
+    stepnumber=1,                 % шаг нумерации
+    frame=single,                 % рамка вокруг кода
+    breaklines=true,              % перенос длинных строк
+    tabsize=1                     % размер табуляции
+}
+\renewcommand{\lstlistingname}{Листинг}
+
+\emergencystretch=2em
+
+\title{Практическая работа №6}
+\author{ст. преп. каф. ВпВ ИКИТ СФУ Тарасов С. А.}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Цель работы}
+Сформировать навыки разработки \texttt{CUDA}-ядер, совместимых с \texttt{PyTorch}.
+
+\section*{Задание}
+\begin{enumerate}
+    \item Разработать кёрнел \texttt{hsys::nn::functional::kernels::conv2d} (см. листинг \ref{lst:conv2d}),
+    который вычисляет пакетную многоканальную двумерную свертку (кросс-корреляцию):
+    \begin{multline}
+    (\mathbf{X} \star \mathbf{W})[n, c_{out}, h_{out}, w_{out}] = \\
+    \sum_{c_{in}=0}^{C_{in}-1} \sum_{r=0}^{k-1} \sum_{q=0}^{k-1} \hat{\mathbf{X}}[n, c_{in}, h_{out} \cdot s+r-p, w_{out} \cdot s+q-p] \cdot \mathbf{W}[c_{out}, c_{in}, r, q]
+    \end{multline}
+    \begin{multline}
+    \hat{\mathbf{X}}[n, c_{out}, h, w] =
+        \begin{cases}
+        \mathbf{X}[n, c_{out}, h, w],  & 0 \leq h < H_{in}~and~0 \leq w < W_{in} \\
+        0,~otherwise
+        \end{cases}
+    \end{multline}
+    Где
+    \begin{itemize}
+    \item $\mathbf{X}$ --- массив размера $[N, C_{in}, H_{in}, W_{in}]$ (пакет входных изображений),
+    \item $\mathbf{W}$ --- массив размера $[C_{out}, C_{in}, k, k]$ (набор ядер/весов свертки),
+    \item $N$ --- размер пакета (batch size),
+    \item $C_{in}$ --- количество каналов входного изображения,
+    \item $H_{in}$ --- высота входного изображения,
+    \item $W_{in}$ --- ширина входного изображения,
+    \item $C_{out}$ --- количество каналов выходного изображения,
+    \item $k$ --- размер квадратного фильтра,
+    \item $s$ --- шаг свертки (stride),
+    \item $p$ --- отступ (padding).
+    \end{itemize}
+
+    \begin{lstlisting}[
+        caption={Декларация conv2d},       % 1. подпись
+        label={lst:conv2d},                % 1. метка для \ref{}
+        float=h,                           % позиционирование как у figure
+    ]
+    template <class T>
+    using view_4d_t = torch::PackedTensorAccessor32<
+        T, 4, torch::RestrictPtrTraits
+    >;
+
+    template <
+        class AtomT,
+        long filter_size,
+        long stride = 1,
+        long padding = 0,
+        long block_size = 16
+    >
+    __global__ void conv2d(
+        view_4d_t<AtomT> output,
+        const view_4d_t<AtomT> input,
+        const view_4d_t<AtomT> weights
+    );
+    \end{lstlisting}
+
+    \item Используя фреймворк \texttt{Google Test}, разработать модульные тесты для \texttt{hsys::nn::functional::kernels::conv2d}. Тестовые сценарии должны покрывать параметры, приведённые в табл. \ref{tab:parameters}. Корректность вычислений проверять путем сравнения с эталонной реализацией \texttt{torch::nn::functional::conv2d}, используя функцию \texttt{torch::allclose} с допусками \texttt{atol} = \texttt{rtol} = $10^{-5}$.
+
+    \begin{table}[h!]
+    \centering
+    \caption{Параметры для тестирования (декартово произведение)}
+    \label{tab:parameters}
+
+    \vspace{0.5cm}
+
+    % First sub-table
+    \begin{tabular}{ccc}
+    \toprule
+    k & s & p \\
+    \midrule
+    3 & 2 & 1 \\
+    3 & 1 & 1 \\
+    7 & 2 & 3 \\
+    1 & 2 & 0 \\
+    \bottomrule
+    \end{tabular}
+
+    \vspace{0.5cm}
+
+    {\Large$\times$}
+
+    \vspace{0.5cm}
+
+    % Second sub-table
+    \begin{tabular}{cccc}
+    \toprule
+    C_{in} & H_{in} & W_{in} & C_{out} \\
+    \midrule
+    3   & 244 & 244 & 64  \\
+    64  & 112 & 112 & 64  \\
+    64  & 56  & 56  & 64  \\
+    128 & 28  & 28  & 128 \\
+    64  & 56  & 56  & 128 \\
+    128 & 28  & 28  & 256 \\
+    256 & 14  & 14  & 512 \\
+    256 & 14  & 14  & 256 \\
+    512 & 7   & 7   & 512 \\
+    \bottomrule
+    \end{tabular}
+
+    \end{table}
+
+    \item Подготовить отчёт, содержащий:
+    \begin{itemize}
+        \item ключевые фрагменты кода;
+        \item ссылку на репозиторий с полной реализацией.
+    \end{itemize}
+\end{enumerate}
+
+\section*{Критерии оценки}
+\begin{itemize}
+    \item \textbf{Корректность реализации и тестирование (65\%):}
+    \begin{itemize}
+        \item корректная работа с \texttt{CUDA API} и \texttt{PyTorch C++ API};
+        \item полнота тестового покрытия, включая граничные случаи;
+        \item соответствие результатов эталонной реализации.
+    \end{itemize}
+
+    \item \textbf{Качество кода и архитектура (25\%):}
+    \begin{itemize}
+        \item чистота архитектуры;
+        \item единообразие стиля, качество форматирования и читаемость кода.
+    \end{itemize}
+
+    \item \textbf{Документация и оформление (10\%):}
+    \begin{itemize}
+        \item полнота и структурированность отчёта;
+        \item ясность изложения;
+        \item оформление репозитория;
+        \item оформление отчёта (\href{https://sfu.ru/sapi/file-upload/325396c75b669b84763c10b7b5c73ec1.pdf}{СТУ 7.5–07–2021}).
+    \end{itemize}
+\end{itemize}
+
+\section*{Рекомендации по выполнению}
+\begin{itemize}
+    \item Реализуйте эффективный алгоритм параллельной свертки (tiling, shared memory), рассмотренный на лекции.
+    \item Обратите внимание, что параметры \texttt{filter\_size}, \texttt{stride}, \texttt{padding} передаются как шаблонные аргументы (compile-time constants), что позволяет компилятору развернуть циклы (loop unrolling).
+    \item Полезные ссылки:
+    \begin{itemize}
+        \item \href{https://docs.pytorch.org/cppdocs/installing.html#minimal-example}{Installing C++ Distributions of PyTorch};
+        \item \href{https://docs.pytorch.org/cppdocs/notes/tensor_basics.html}{Tensor Basics};
+        \item \href{https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.conv2d.html}{torch.nn.functional.conv2d}.
+    \end{itemize}
+\end{itemize}
+
+\end{document}
