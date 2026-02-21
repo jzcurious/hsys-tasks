@@ -96,7 +96,9 @@
     );
     \end{lstlisting}
 
-    \item Используя фреймворк \texttt{Google Test}, разработать модульные тесты для \texttt{hsys::nn::functional::kernels::conv2d}. Тестовые сценарии должны покрывать параметры, приведённые в табл. \ref{tab:parameters}. Корректность вычислений проверять путем сравнения с эталонной реализацией \texttt{torch::nn::functional::conv2d}, используя функцию \texttt{torch::allclose} с допусками \texttt{atol} = \texttt{rtol} = $10^{-5}$.
+    \item Используя фреймворк \texttt{Google Test}, разработать модульные тесты для \texttt{hsys::nn::functional::kernels::conv2d}. Тестовые сценарии должны покрывать параметры, приведённые в табл. \ref{tab:parameters}.
+    Корректность вычислений проверять путем сравнения с эталонной реализацией \texttt{torch::nn::functional::conv2d}, используя функцию \texttt{torch::allclose} с допусками \texttt{atol} = \texttt{rtol} = $10^{-5}$ (\texttt{float}).
+    Если вы используете типы пониженной точности, то допуск необходимо увеличить; например, для \texttt{half}: \texttt{atol} = \texttt{rtol} = $10^{-2}$.
 
     \begin{table}[h!]
     \centering
