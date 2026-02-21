@@ -49,7 +49,7 @@
     который вычисляет пакетную многоканальную двумерную свертку (кросс-корреляцию):
     \begin{multline}
     (\mathbf{X} \star \mathbf{W})[n, c_{out}, h_{out}, w_{out}] = \\
-    \sum_{c_{in}=0}^{C_{in}-1} \sum_{r=0}^{k-1} \sum_{q=0}^{k-1} \hat{\mathbf{X}}[n, c_{in}, h_{out} \cdot s+r-p, w_{out} \cdot s+q-p] \cdot \mathbf{W}[c_{out}, c_{in}, r, q]
+    \sum_{c_{in}=0}^{C_{in}-1} \sum_{r=0}^{k-1} \sum_{q=0}^{k-1} \hat{\mathbf{X}}[n, c_{in}, h_{out} \cdot s + r \cdot d - p, w_{out} \cdot s + q \cdot d - p] \cdot \mathbf{W}[c_{out}, c_{in}, r, q]
     \end{multline}
     \begin{multline}
     \hat{\mathbf{X}}[n, c_{out}, h, w] =
@@ -69,7 +69,8 @@
     \item $C_{out}$ --- количество каналов выходного изображения,
     \item $k$ --- размер квадратного фильтра,
     \item $s$ --- шаг свертки (stride),
-    \item $p$ --- отступ (padding).
+    \item $p$ --- отступ (padding),
+    \item $d$ --- коэффициент расширения (dilation).
     \end{itemize}
 
     \begin{lstlisting}[
@@ -87,6 +88,7 @@
         long filter_size,
         long stride = 1,
         long padding = 0,
+        long dilation = 1,
         long block_size = 16
     >
     __global__ void conv2d(
@@ -108,14 +110,16 @@
     \vspace{0.5cm}
 
     % First sub-table
-    \begin{tabular}{ccc}
+    \begin{tabular}{cccc}
     \toprule
-    k & s & p \\
+    k & s & p & d \\
     \midrule
-    3 & 2 & 1 \\
-    3 & 1 & 1 \\
-    7 & 2 & 3 \\
-    1 & 2 & 0 \\
+    3 & 2 & 1 & 1 \\
+    3 & 1 & 1 & 1 \\
+    7 & 2 & 3 & 1 \\
+    1 & 2 & 0 & 1 \\
+    3 & 1 & 2 & 2 \\
+    3 & 2 & 2 & 2 \\
     \bottomrule
     \end{tabular}
 
@@ -178,7 +182,7 @@
 \section*{Рекомендации по выполнению}
 \begin{itemize}
     \item Реализуйте эффективный алгоритм параллельной свертки (tiling, shared memory), рассмотренный на лекции.
-    \item Обратите внимание, что параметры \texttt{filter\_size}, \texttt{stride}, \texttt{padding} передаются как шаблонные аргументы (compile-time constants), что позволяет компилятору развернуть циклы (loop unrolling).
+    \item Обратите внимание, что параметры \texttt{filter\_size}, \texttt{stride}, \texttt{padding}, \texttt{dilation} передаются как шаблонные аргументы (compile-time constants), что позволяет компилятору развернуть циклы (loop unrolling).
     \item Полезные ссылки:
     \begin{itemize}
         \item \href{https://docs.pytorch.org/cppdocs/installing.html#minimal-example}{Installing C++ Distributions of PyTorch};
