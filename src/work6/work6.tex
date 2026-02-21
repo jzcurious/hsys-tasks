@@ -62,15 +62,15 @@
     \begin{itemize}
     \item $\mathbf{X}$ --- массив размера $[N, C_{in}, H_{in}, W_{in}]$ (пакет входных изображений),
     \item $\mathbf{W}$ --- массив размера $[C_{out}, C_{in}, k, k]$ (набор ядер/весов свертки),
-    \item $N$ --- размер пакета (batch size),
+    \item $N$ --- размер пакета (\texttt{batch\_size}),
     \item $C_{in}$ --- количество каналов входного изображения,
     \item $H_{in}$ --- высота входного изображения,
     \item $W_{in}$ --- ширина входного изображения,
     \item $C_{out}$ --- количество каналов выходного изображения,
     \item $k$ --- размер квадратного фильтра,
-    \item $s$ --- шаг свертки (stride),
-    \item $p$ --- отступ (padding),
-    \item $d$ --- коэффициент расширения (dilation).
+    \item $s$ --- шаг свертки (\texttt{stride}),
+    \item $p$ --- отступ (\texttt{padding}),
+    \item $d$ --- коэффициент расширения (\texttt{dilation}).
     \end{itemize}
 
     \begin{lstlisting}[
@@ -183,6 +183,11 @@
 \begin{itemize}
     \item Реализуйте эффективный алгоритм параллельной свертки (tiling, shared memory), рассмотренный на лекции.
     \item Обратите внимание, что параметры \texttt{filter\_size}, \texttt{stride}, \texttt{padding}, \texttt{dilation} передаются как шаблонные аргументы (compile-time constants), что позволяет компилятору развернуть циклы (loop unrolling).
+    \item Форма выходного тензора $[N, C_{out}, H_{out}, W_{out}]$ вычисляется следующим образом:
+    \begin{align}
+    H_{out} &= \left\lfloor \frac{H_{in} + 2p - d\,(k - 1) - 1}{s} \right\rfloor + 1, \\
+    W_{out} &= \left\lfloor \frac{W_{in} + 2p - d\,(k - 1) - 1}{s} \right\rfloor + 1.
+    \end{align}
     \item Полезные ссылки:
     \begin{itemize}
         \item \href{https://docs.pytorch.org/cppdocs/installing.html#minimal-example}{Installing C++ Distributions of PyTorch};
