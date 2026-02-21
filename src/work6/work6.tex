@@ -185,8 +185,8 @@
     \item Обратите внимание, что параметры \texttt{filter\_size}, \texttt{stride}, \texttt{padding}, \texttt{dilation} передаются как шаблонные аргументы (compile-time constants), что позволяет компилятору развернуть циклы (loop unrolling).
     \item Форма выходного тензора $[N, C_{out}, H_{out}, W_{out}]$ вычисляется следующим образом:
     \begin{align}
-    H_{out} &= \left\lfloor \frac{H_{in} + 2p - d\,(k - 1) - 1}{s} \right\rfloor + 1, \\
-    W_{out} &= \left\lfloor \frac{W_{in} + 2p - d\,(k - 1) - 1}{s} \right\rfloor + 1.
+    H_{out} &= \left\lfloor \frac{H_{in} + 2p - d\,(k - 1) - 1}{s} + 1\right\rfloor, \\
+    W_{out} &= \left\lfloor \frac{W_{in} + 2p - d\,(k - 1) - 1}{s} + 1\right\rfloor.
     \end{align}
     \item Полезные ссылки:
     \begin{itemize}
